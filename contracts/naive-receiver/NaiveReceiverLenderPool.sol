@@ -36,6 +36,7 @@ contract NaiveReceiverLenderPool is ReentrancyGuard {
 
         // @idea 2) we need to find a way to preserve the msg.sender
         // but change the fee value
+        // ---  did't find a way to do this
         require(borrower.isContract(), "Borrower must be a deployed contract");
         // Transfer ETH and handle control to receiver
         borrower.functionCallWithValue(

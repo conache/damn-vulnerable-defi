@@ -30,6 +30,9 @@ contract FlashLoanReceiver {
 
         // @solution 1 - FIRST (easier solution) is to flashloan 10 times
         // this way we'll get the 10 ETH initial funds of this contract
+
+        // @solution 2 - ACTUAL SOLUTION - flashloan 10 times from a attacker contract
+        // so that we do the entire attack in one tx
         uint256 amountToBeRepaid = msg.value + fee;
 
         require(

