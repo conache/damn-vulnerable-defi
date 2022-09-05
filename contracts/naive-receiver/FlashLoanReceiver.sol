@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 /**
@@ -18,22 +19,33 @@ contract FlashLoanReceiver {
     }
 
     // Function called by the pool during flash loan
+
+    // @potential - fee doesn't have any limit here
     function receiveEther(uint256 fee) public payable {
+        // but the caller is limited to be the pool contract
+        // making a contract to call this isn't a solution
+        // using delegatecall isn't a solution b/c we're not modifying
+        // the target contract balance
         require(msg.sender == pool, "Sender must be pool");
 
+        // @solution 1 - FIRST (easier solution) is to flashloan 10 times
+        // this way we'll get the 10 ETH initial funds of this contract
         uint256 amountToBeRepaid = msg.value + fee;
 
-        require(address(this).balance >= amountToBeRepaid, "Cannot borrow that much");
-        
+        require(
+            address(this).balance >= amountToBeRepaid,
+            "Cannot borrow that much"
+        );
+
         _executeActionDuringFlashLoan();
-        
+
         // Return funds to pool
         pool.sendValue(amountToBeRepaid);
     }
 
     // Internal function where the funds received are used
-    function _executeActionDuringFlashLoan() internal { }
+    function _executeActionDuringFlashLoan() internal {}
 
     // Allow deposits of ETH
-    receive () external payable {}
+    receive() external payable {}
 }
