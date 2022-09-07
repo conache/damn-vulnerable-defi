@@ -6,13 +6,14 @@ import "./RewardToken.sol";
 import "../DamnValuableToken.sol";
 import "./AccountingToken.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @title TheRewarderPool
  * @author Damn Vulnerable DeFi (https://damnvulnerabledefi.xyz)
 
  */
 contract TheRewarderPool {
-
     // Minimum duration of each round of rewards in seconds
     uint256 private constant REWARDS_ROUND_MIN_DURATION = 5 days;
 
@@ -27,7 +28,7 @@ contract TheRewarderPool {
     // Token used for internal accounting and snapshots
     // Pegged 1:1 with the liquidity token
     AccountingToken public accToken;
-    
+
     // Token in which rewards are issued
     RewardToken public immutable rewardToken;
 
@@ -48,12 +49,18 @@ contract TheRewarderPool {
      */
     function deposit(uint256 amountToDeposit) external {
         require(amountToDeposit > 0, "Must deposit tokens");
-        
+
         accToken.mint(msg.sender, amountToDeposit);
+
+        // @potential - why distribute rewards here?
         distributeRewards();
 
         require(
-            liquidityToken.transferFrom(msg.sender, address(this), amountToDeposit)
+            liquidityToken.transferFrom(
+                msg.sender,
+                address(this),
+                amountToDeposit
+            )
         );
     }
 
@@ -62,26 +69,39 @@ contract TheRewarderPool {
         require(liquidityToken.transfer(msg.sender, amountToWithdraw));
     }
 
+    // @note - anyone can call distributeRewards to receive the reward token amount
     function distributeRewards() public returns (uint256) {
         uint256 rewards = 0;
 
-        if(isNewRewardsRound()) {
+        if (isNewRewardsRound()) {
             _recordSnapshot();
-        }        
-        
-        uint256 totalDeposits = accToken.totalSupplyAt(lastSnapshotIdForRewards);
-        uint256 amountDeposited = accToken.balanceOfAt(msg.sender, lastSnapshotIdForRewards);
+        }
+
+        // is there a way to conserve this value?
+        // 1. deposit, snapshot, then withdraw
+        // withdraw -> burns accToken
+        // total supply updates in _beforeTokenTransfer
+        // which means that its value is not correctly updated
+        uint256 totalDeposits = accToken.totalSupplyAt(
+            lastSnapshotIdForRewards
+        );
+        uint256 amountDeposited = accToken.balanceOfAt(
+            msg.sender,
+            lastSnapshotIdForRewards
+        );
 
         if (amountDeposited > 0 && totalDeposits > 0) {
-            rewards = (amountDeposited * 100 * 10 ** 18) / totalDeposits;
+            // @potential - rewards would be really small if totalDeposits has a big value
+            // obviously, we can influence the totalDeposits value by depositing
+            rewards = (amountDeposited * 100 * 10**18) / totalDeposits;
 
-            if(rewards > 0 && !_hasRetrievedReward(msg.sender)) {
+            if (rewards > 0 && !_hasRetrievedReward(msg.sender)) {
                 rewardToken.mint(msg.sender, rewards);
                 lastRewardTimestamps[msg.sender] = block.timestamp;
             }
         }
 
-        return rewards;     
+        return rewards;
     }
 
     function _recordSnapshot() private {
@@ -91,13 +111,15 @@ contract TheRewarderPool {
     }
 
     function _hasRetrievedReward(address account) private view returns (bool) {
-        return (
-            lastRewardTimestamps[account] >= lastRecordedSnapshotTimestamp &&
-            lastRewardTimestamps[account] <= lastRecordedSnapshotTimestamp + REWARDS_ROUND_MIN_DURATION
-        );
+        return (lastRewardTimestamps[account] >=
+            lastRecordedSnapshotTimestamp &&
+            lastRewardTimestamps[account] <=
+            lastRecordedSnapshotTimestamp + REWARDS_ROUND_MIN_DURATION);
     }
 
     function isNewRewardsRound() public view returns (bool) {
-        return block.timestamp >= lastRecordedSnapshotTimestamp + REWARDS_ROUND_MIN_DURATION;
+        return
+            block.timestamp >=
+            lastRecordedSnapshotTimestamp + REWARDS_ROUND_MIN_DURATION;
     }
 }
