@@ -6,8 +6,6 @@ import "./RewardToken.sol";
 import "../DamnValuableToken.sol";
 import "./AccountingToken.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @title TheRewarderPool
  * @author Damn Vulnerable DeFi (https://damnvulnerabledefi.xyz)
@@ -94,7 +92,6 @@ contract TheRewarderPool {
             // @potential - rewards would be really small if totalDeposits has a big value
             // obviously, we can influence the totalDeposits value by depositing
             rewards = (amountDeposited * 100 * 10**18) / totalDeposits;
-
             if (rewards > 0 && !_hasRetrievedReward(msg.sender)) {
                 rewardToken.mint(msg.sender, rewards);
                 lastRewardTimestamps[msg.sender] = block.timestamp;

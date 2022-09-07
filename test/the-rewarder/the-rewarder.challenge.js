@@ -68,7 +68,7 @@ describe("[Challenge] The rewarder", function () {
       this.rewardToken.address
     );
 
-    await this.rewarderAttacker.attack();
+    await this.rewarderAttacker.connect(attacker).attack();
   });
 
   after(async function () {
@@ -90,7 +90,7 @@ describe("[Challenge] The rewarder", function () {
     // Rewards must have been issued to the attacker account
     expect(await this.rewardToken.totalSupply()).to.be.gt(ethers.utils.parseEther("100"));
     let rewards = await this.rewardToken.balanceOf(attacker.address);
-    console.log("Rewards:", ethers.utils.formatEther(rewards));
+
     // The amount of rewards earned should be really close to 100 tokens
     let delta = ethers.utils.parseEther("100").sub(rewards);
     expect(delta).to.be.lt(ethers.utils.parseUnits("1", 17));

