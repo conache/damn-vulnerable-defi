@@ -54,6 +54,7 @@ contract SelfiePool is ReentrancyGuard {
         );
     }
 
+    // @note - this drains all funds of the contract
     function drainAllFunds(address receiver) external onlyGovernance {
         uint256 amount = token.balanceOf(address(this));
         token.transfer(receiver, amount);
