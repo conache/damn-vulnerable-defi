@@ -30,7 +30,9 @@ describe("[Challenge] Selfie", function () {
 
     await this.poolAttacker.attack();
     await ethers.provider.send("evm_increaseTime", [2 * 24 * 60 * 60]); // 2 days
-    await this.governance.connect(attacker).executeAction(1);
+
+    const actionId = await this.poolAttacker.actionId();
+    await this.governance.connect(attacker).executeAction(actionId);
   });
 
   after(async function () {

