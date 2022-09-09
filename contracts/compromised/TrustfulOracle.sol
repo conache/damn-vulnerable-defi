@@ -60,7 +60,6 @@ contract TrustfulOracle is AccessControlEnumerable {
             _setPrice(sources[i], symbols[i], prices[i]);
         }
 
-        // @note - why renounce role after setting up prices?
         renounceRole(INITIALIZER_ROLE, msg.sender);
     }
 
