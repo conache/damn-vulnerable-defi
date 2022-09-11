@@ -93,6 +93,10 @@ contract PuppetV2Pool {
     function _getOracleQuote(uint256 amount) private view returns (uint256) {
         (uint256 reservesWETH, uint256 reservesToken) = UniswapV2Library
             .getReserves(_uniswapFactory, address(_weth), address(_token));
+
+        // @note - .quote()
+        // Given some asset amount and reserves, returns an amount of the other asset representing equivalent value.
+        // Useful for calculating optimal token amounts before calling mint.
         return
             UniswapV2Library.quote(
                 amount.mul(10**18),

