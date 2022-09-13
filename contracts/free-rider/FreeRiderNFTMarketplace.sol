@@ -83,6 +83,8 @@ contract FreeRiderNFTMarketplace is ReentrancyGuard {
         token.safeTransferFrom(token.ownerOf(tokenId), msg.sender, tokenId);
 
         // pay seller
+        // @note - actually it pays the new owner of the current NFT, meaning the msg.sender
+        // in other words, gives money back to the sender
         payable(token.ownerOf(tokenId)).sendValue(priceToPay);
 
         emit NFTBought(msg.sender, tokenId, priceToPay);
