@@ -46,6 +46,7 @@ contract WalletRegistry is IProxyCreationCallback, Ownable {
     }
 
     function addBeneficiary(address beneficiary) public onlyOwner {
+        // only owner adds beneficiary
         beneficiaries[beneficiary] = true;
     }
 
@@ -65,6 +66,7 @@ contract WalletRegistry is IProxyCreationCallback, Ownable {
         bytes calldata initializer,
         uint256
     ) external override {
+        // @notice - each existing beneficiary needs to have a wallet registered
         // Make sure we have enough DVT to pay
         require(
             token.balanceOf(address(this)) >= TOKEN_PAYMENT,
@@ -74,16 +76,21 @@ contract WalletRegistry is IProxyCreationCallback, Ownable {
         address payable walletAddress = payable(proxy);
 
         // Ensure correct factory and master copy
+        // @notice - this can only be called from wallet factory
         require(msg.sender == walletFactory, "Caller must be factory");
+
+        // @notice - not sure what 'singletone' role is, but its value is dictated here
         require(singleton == masterCopy, "Fake mastercopy used");
 
         // Ensure initial calldata was a call to `GnosisSafe::setup`
+        // @notice - this can be faked afaik
         require(
             bytes4(initializer[:4]) == GnosisSafe.setup.selector,
             "Wrong initialization"
         );
 
         // Ensure wallet initialization is the expected
+        // @notice - these can be assured in the proxy implementation
         require(
             GnosisSafe(walletAddress).getThreshold() == MAX_THRESHOLD,
             "Invalid threshold"
@@ -94,6 +101,7 @@ contract WalletRegistry is IProxyCreationCallback, Ownable {
         );
 
         // Ensure the owner is a registered beneficiary
+        // @potential - we can return a beneficiary address here
         address walletOwner = GnosisSafe(walletAddress).getOwners()[0];
 
         require(
@@ -107,7 +115,15 @@ contract WalletRegistry is IProxyCreationCallback, Ownable {
         // Register the wallet under the owner's address
         wallets[walletOwner] = walletAddress;
 
+        // @note - single place where the contract transfers tokens
         // Pay tokens to the newly created wallet
+        // @potential - funds transferred to the PROXY contract, not the actual beneficiary (wallet owner)
         token.transfer(walletAddress, TOKEN_PAYMENT);
+
+        // proposed solution:
+        // setup GonisisSafe&GonisisSafeProxy needed for each beneficiary address
+        // Create GnosisSafe wallet via GnosisSafeProxyFactory::createProxyWithCallback
+        // 1. Make sure GnosisSafe(walletAddress).getOwners()[0]; -> returns beneficiary address
+        // 2. Add custom method on proxy contract that transfers DVT tokens to the attacker
     }
 }
