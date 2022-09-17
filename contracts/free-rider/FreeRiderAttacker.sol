@@ -8,8 +8,6 @@ import "./FreeRiderNFTMarketplace.sol";
 import "../WETH9.sol";
 import "../DamnValuableNFT.sol";
 
-import "hardhat/console.sol";
-
 contract FreeRiderAttacker is ReentrancyGuard, IERC721Receiver {
     FreeRiderNFTMarketplace market;
     IUniswapV2Pair uniV2Pair;

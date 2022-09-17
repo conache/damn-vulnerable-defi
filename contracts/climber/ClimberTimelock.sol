@@ -24,9 +24,9 @@ contract ClimberTimelock is AccessControl {
 
     // Operation data tracked in this contract
     struct Operation {
-        uint64 readyAtTimestamp;   // timestamp at which the operation will be ready for execution
-        bool known;         // whether the operation is registered in the timelock
-        bool executed;      // whether the operation has been executed
+        uint64 readyAtTimestamp; // timestamp at which the operation will be ready for execution
+        bool known; // whether the operation is registered in the timelock
+        bool executed; // whether the operation has been executed
     }
 
     // Operations are tracked by their bytes32 identifier
@@ -34,10 +34,7 @@ contract ClimberTimelock is AccessControl {
 
     uint64 public delay = 1 hours;
 
-    constructor(
-        address admin,
-        address proposer
-    ) {
+    constructor(address admin, address proposer) {
         _setRoleAdmin(ADMIN_ROLE, ADMIN_ROLE);
         _setRoleAdmin(PROPOSER_ROLE, ADMIN_ROLE);
 
@@ -48,14 +45,18 @@ contract ClimberTimelock is AccessControl {
         _setupRole(PROPOSER_ROLE, proposer);
     }
 
-    function getOperationState(bytes32 id) public view returns (OperationState) {
+    function getOperationState(bytes32 id)
+        public
+        view
+        returns (OperationState)
+    {
         Operation memory op = operations[id];
-        
-        if(op.executed) {
+
+        if (op.executed) {
             return OperationState.Executed;
-        } else if(op.readyAtTimestamp >= block.timestamp) {
+        } else if (op.readyAtTimestamp >= block.timestamp) {
             return OperationState.ReadyForExecution;
-        } else if(op.readyAtTimestamp > 0) {
+        } else if (op.readyAtTimestamp > 0) {
             return OperationState.Scheduled;
         } else {
             return OperationState.Unknown;
@@ -71,6 +72,7 @@ contract ClimberTimelock is AccessControl {
         return keccak256(abi.encode(targets, values, dataElements, salt));
     }
 
+    // only proposer role can schedule
     function schedule(
         address[] calldata targets,
         uint256[] calldata values,
@@ -82,8 +84,11 @@ contract ClimberTimelock is AccessControl {
         require(targets.length == dataElements.length);
 
         bytes32 id = getOperationId(targets, values, dataElements, salt);
-        require(getOperationState(id) == OperationState.Unknown, "Operation already known");
-        
+        require(
+            getOperationState(id) == OperationState.Unknown,
+            "Operation already known"
+        );
+
         operations[id].readyAtTimestamp = uint64(block.timestamp) + delay;
         operations[id].known = true;
     }
@@ -102,13 +107,20 @@ contract ClimberTimelock is AccessControl {
         bytes32 id = getOperationId(targets, values, dataElements, salt);
 
         for (uint8 i = 0; i < targets.length; i++) {
+            // @potential - funtion call with value happens before checking the operation state
             targets[i].functionCallWithValue(dataElements[i], values[i]);
         }
-        
+        // in order for this to pass even if we don't have the operation registered initially
+        // we need to use in our favour
+        // targets[i].functionCallWithValue(dataElements[i], values[i]);
+        // at this point we'll need
+        // a registered operation having the provided id
+        // registering operations can be made only by the proposer
         require(getOperationState(id) == OperationState.ReadyForExecution);
         operations[id].executed = true;
     }
 
+    // updateDelay can be called within
     function updateDelay(uint64 newDelay) external {
         require(msg.sender == address(this), "Caller must be timelock itself");
         require(newDelay <= 14 days, "Delay must be 14 days or less");

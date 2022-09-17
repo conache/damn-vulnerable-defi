@@ -13,7 +13,11 @@ import "./ClimberTimelock.sol";
  * @dev To be deployed behind a proxy following the UUPS pattern. Upgrades are to be triggered by the owner.
  * @author Damn Vulnerable DeFi (https://damnvulnerabledefi.xyz)
  */
-contract ClimberVault is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract ClimberVaultVulnerable is
+    Initializable,
+    OwnableUpgradeable,
+    UUPSUpgradeable
+{
     uint256 public constant WITHDRAWAL_LIMIT = 1 ether;
     uint256 public constant WAITING_PERIOD = 15 days;
 
@@ -40,7 +44,7 @@ contract ClimberVault is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         // Deploy timelock and transfer ownership to it
         transferOwnership(address(new ClimberTimelock(admin, proposer)));
 
-        _setSweeper(sweeper);
+        setSweeper(sweeper);
         _setLastWithdrawal(block.timestamp);
         _lastWithdrawalTimestamp = block.timestamp;
     }
@@ -64,10 +68,11 @@ contract ClimberVault is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     // Allows trusted sweeper account to retrieve any tokens
-    function sweepFunds(address tokenAddress) external onlySweeper {
+
+    function sweepFunds(address tokenAddress, address receiver) external {
         IERC20 token = IERC20(tokenAddress);
         require(
-            token.transfer(_sweeper, token.balanceOf(address(this))),
+            token.transfer(receiver, token.balanceOf(address(this))),
             "Transfer failed"
         );
     }
@@ -76,7 +81,7 @@ contract ClimberVault is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return _sweeper;
     }
 
-    function _setSweeper(address newSweeper) internal {
+    function setSweeper(address newSweeper) public {
         _sweeper = newSweeper;
     }
 

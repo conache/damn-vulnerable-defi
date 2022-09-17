@@ -5,8 +5,6 @@ import "./SelfiePool.sol";
 import "./SimpleGovernance.sol";
 import "../DamnValuableTokenSnapshot.sol";
 
-import "hardhat/console.sol";
-
 contract SelfiePoolAttacker {
     SelfiePool private selfiePool;
     SimpleGovernance private simpleGovernance;
